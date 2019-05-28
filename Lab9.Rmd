@@ -1,0 +1,71 @@
+---
+title: "Lab9"
+author: "Arjun"
+date: "October 29, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+
+1.
+a1 + b1*x   x< knot1
+a2 + b2 *x  k1 < x < k2
+a3 + b3 *x  k2 < x < k3
+a4 + b4 *x  k3 < x 
+
+8 - 2*3 = 2 parameters
+
+2. 
+a1 + b1*x + c1*x^2 x< knot1
+a2 + b2*x + c2*x^2 k1 < x < k2
+a3 + b3*x + c3*x^2 k2 < x < k3
+a4 + b4*x + c4*x^2 k3 < x
+
+12 - 3knots*2constraints = 6 parameters
+
+3. 
+4. The first term in the penalized sum of squares measures how close the model is to the data. The second term penalized how curvy the model is, favoring a straighter model. Lambda is set to determine the tradeoff between the two terms.
+
+5. A piecewise function doesn't have to be continuous at any levels of derivaties. A smooth spline is continuous thprughout the range and doesn't have specfic places of change.
+
+6. Its a data set with 3000 people in which their marital status, their health, their age, their race, their locaiton, their job class, their health insurance status, the year the data was collected, their wage and finally their log wage are described. 
+
+```{r}
+library(ISLR)
+library(splines)
+```
+7. 
+
+```{r}
+agelims=range(Wage$age)
+age.grid=seq(from=agelims[1], to=agelims[2])
+```
+
+```{r}
+fit=lm(wage~bs(age, knots=c(25, 35, 45, 55)), data=Wage)
+pred=predict(fit, newdata=list(age=age.grid), se=T)
+plot(Wage$age, Wage$wage, col="gray")
+lines(age.grid, pred$fit, lwd=2)
+lines(age.grid, pred$fit+2*pred$se, lty="dashed")
+lines(age.grid, pred$fit-2*pred$se, lty="dashed")
+```
+
+8. Form ages 30 to 60 their seems to be little relation between age and wage, with enough variation between the data for their to be little correlation. However form ages 20 to 30 there's a positive correlation and from ages 60 to 80 there's a negative correlation.
+
+```{r}
+fitns=lm(wage~ns(horsepower, df=4), data=Auto)
+prens=predict(fitns, newdata=list(age=age.grid), se=T)
+plot(Wage$age, Wage$wage, col="gray")
+lines(age.grid, prens$fit, col="green", lwd=2)
+```
+
+9. You find a very similar result with their being little correlation between 35 this tim and 60. However, the data seems more parabolic with a peak in one's mid 40's.
+
+```{r}
+fitsm=smooth.spline(Wage$age, Wage$wage, df=8)
+plot(Wage$age, Wage$wage, col="gray")
+lines(fitsm, col="red", lwd=2)
+```
+
+The overarching point that therre is little correlation between age and wage for ages 30 to 60 stands true. However, this model has two peaks one at 40 and one around 60. 

@@ -1,0 +1,71 @@
+---
+title: "Hw 4 stat 154"
+author: "Arjun"
+date: "November 1, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+library(ISLR)
+library(boot)
+library(pls)
+library(dplyr)
+```
+
+```{r}
+X = rnorm(100,0,.015)
+Y = rnorm(100,0,.015)
+Z = rnorm(100,0,.015)
+dat = data.frame(X,Y,Z)
+alpha = function(frame,index){
+  X = frame$X[index]
+  Y = frame$Y[index]
+  Z = frame$Z[index]
+  top = var(Z) + cov(X,Z) + 2*cov(Y,Z)
+  bottom = 2* (var(X)+var(Y)+9*var(Z) + 2* cov(X,Y)-3*cov(X,Z) - 6 *cov(Y,Z)) 
+  return(top/bottom)
+}
+alpha(dat, 1:100)
+
+```
+
+```{r}
+boot(dat, alpha, R= 1500)
+```
+4. The resulting statistic is an alpha of .04 with a very small bias, but a pretty small standard erro as well, which makes me think this is a good result, and a reliable one as well. We did 1500 resmaplings of our data and consistently got a result that was in line with the one where we just sampled our entire data once. 
+
+
+```{r}
+hittersfixed = Hitters %>% filter(is.na(Salary) != TRUE)
+train = sample(263,198)
+trainset = hittersfixed[train,]
+testset = hittersfixed[-train,]
+```
+
+```{r}
+hitmodel = pcr(Salary~., data = trainset, scale = TRUE, validation = "CV")
+summary(hitmodel)
+validationplot(hitmodel, val.type = "MSEP")
+```
+Best component number is 17
+
+```{r}
+hit.pred = predict(hitmodel, testset, ncomp = 17)
+mean((hit.pred-testset$Salary)^2)
+```
+
+```{r}
+hitmodel2 = plsr(Salary~., data = trainset, scale = TRUE, validation = "CV")
+summary(hitmodel)
+validationplot(hitmodel2, val.type = "MSEP")
+```
+
+Best component amount is 2
+```{r}
+hit.pred = predict(hitmodel, testset, ncomp = 2)
+mean((hit.pred-testset$Salary)^2)
+```
+
+13. Both are methods of dimension reduction that create componenets based on the many predictor variables. However, PLSR uses the response as a way to construct the components while the PCR does not. This can lead to a more accurate result of it can lead to overfitting. In our case the PLSR led to overfitting making the PCR more accurate. 

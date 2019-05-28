@@ -1,0 +1,67 @@
+---
+title: "Lab 7"
+author: "Arjun"
+date: "October 15, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+ library(ISLR)
+```
+
+```{r}
+set.seed(12)
+train=sample(392, 196)
+lm.fit=lm(mpg~horsepower, data=Auto, subset=train)
+attach(Auto)
+mean((mpg-predict(lm.fit, Auto))[-train]^2)
+```
+
+1. The average value for mpg is 23.45 mpg, so a MSE of 20.86694 is pretty large, which would suggest that a linear model with horsepower as the predictor is not a good model for predicting mpg.
+
+```{r}
+lm.fit2=lm(mpg~poly(horsepower, 2), data=Auto, subset=train)
+mean((mpg-predict(lm.fit2, Auto))[-train]^2)
+```
+
+2. The MSE is only 15.64 which makes a 2-degree polynomial predictor better than a linear model, but 15.64 is still pretty big compared to an average of 23.45 so a 2 degree polynomial model also isn't very good.
+
+```{r}
+pmerror = rep(0,10)
+for (i in 3:10){
+  lm.fiti=lm(mpg~poly(horsepower, i), data=Auto, subset=train)
+  avg = mean((mpg-predict(lm.fiti, Auto))[-train]^2)
+  pmerror[i] = avg}
+pmerror[3:10]
+```
+
+3. There is no discernible pattern of increase and decrease, however, a 7th degree polynomial model has the lowest MSE, of 15.97, which is still bigger than the MSE for a 2 degree polynomial, meaning that it is likely that a 2 degree polynomial is the best fit.
+
+```{r}
+ glm.fit=glm(mpg~horsepower, data=Auto)
+library(boot)
+cv.err=cv.glm(Auto, glm.fit)
+cv.err
+```
+
+4. The LOOCV has a test errror rate of 24.23 which is still pretty high, which, with the other models, is starting to suggest that horsepower is not the best predictor of mpg
+
+```{r}
+cv.err=rep(0, 5)
+for (i in 1:5){
+  glm.fit=glm(mpg~poly(horsepower, i), data=Auto)
+  cv.err[i]=cv.glm(Auto, glm.fit)$delta[1] }
+cv.err
+```
+
+```{r}
+cv.err.10=rep(0, 10)
+for (i in 1:10){
+  glm.fit=glm(mpg~poly(horsepower, i), data=Auto)
+  cv.err.10[i]=cv.glm(Auto, glm.fit)$delta[1] }
+cv.err.10
+```
+
+6. There is also no obvious pattern in the LOOCV models with the MSE increasing and decreasing from 0 to 10. The variances are also higher. However, like in Quesiton 3, a 7th degree polynomial is the best model.  

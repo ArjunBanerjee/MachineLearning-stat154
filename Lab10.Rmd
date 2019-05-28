@@ -1,0 +1,136 @@
+---
+title: "Lab 10"
+author: "Arjun"
+date: "November 5, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+library(tree)
+library(ISLR)
+library(MASS)
+```
+
+```{r}
+summary(Carseats)
+```
+Sales = Unit sales (in thousands) at each location
+CompPice = Price charged by competitor at each location
+Income = Community income level in dollars
+Advertising = Local advertising budget for company at each location (in thousands of dollars)
+Population = Populaiton size in region (in thousands)
+Price = Price of car seat at each site
+ShelveLoc = A factor with levels Bad, Good and Medium indicating the quality of the shelving location for the car seats at each site
+Age = Average age of local population
+Education = Education level at each location
+Urban = A factor with levels No and Yes to indicate whether the store is in an urban or rural location
+US = A factor with levels No and Yes to indicate whether the store is in the US or not
+
+```{r}
+High=ifelse (Carseats$Sales <=9," No"," Yes ")
+```
+
+```{r}
+Carseats =data.frame(Carseats ,High)
+```
+
+```{r}
+Carseats$High.1 = NULL
+Carseats$High.2 = NULL
+Carseats$High.3 = NULL
+Carseats$High.4 = NULL
+```
+
+```{r}
+set.seed(23)
+tree.carseats =tree(High~.-Sales - High, Carseats )
+summary(tree.carseats)
+```
+The fundamental assumption of a tree regression is that within certain ranges of variable data, the dependent variable is the same. That it is possibel to divide the data into groups based on whther or not the values are greater or less than certain values. This regression divided the data into 22 different groups and the classified them based on the groups. The misclassification rate of .09 means that this is a good fit and reliable model.
+
+```{r}
+summary(Boston)
+```
+This data frame contains the following columns:
+
+crim
+per capita crime rate by town.
+
+zn
+proportion of residential land zoned for lots over 25,000 sq.ft.
+
+indus
+proportion of non-retail business acres per town.
+
+chas
+Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+
+nox
+nitrogen oxides concentration (parts per 10 million).
+
+rm
+average number of rooms per dwelling.
+
+age
+proportion of owner-occupied units built prior to 1940.
+
+dis
+weighted mean of distances to five Boston employment centres.
+
+rad
+index of accessibility to radial highways.
+
+tax
+full-value property-tax rate per \$10,000.
+
+ptratio
+pupil-teacher ratio by town.
+
+black
+1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+
+lstat
+lower status of the population (percent).
+
+medv
+median value of owner-occupied homes in \$1000s.
+
+```{r}
+set.seed(1)
+train=sample(1:nrow(Boston), nrow(Boston)/2)
+tree.boston =tree(medv~.,Boston ,subset =train)
+summary(tree.boston)
+```
+
+```{r}
+plot(tree.boston)
+text(tree.boston, pretty=0)
+```
+
+8. The assumptions in this model are the same for the previous tree model. We divided the data into 8 unique groups. Of the variables in the data set only lstat, rm, and dis are used showing that the status of the population, rooms, and distance from employment center are the best predictors for grouping the data togther. 
+
+
+```{r}
+cv.boston=cv.tree(tree.boston)
+plot(cv.boston$size, cv.boston$dev, type='b')
+```
+The best number of nodes is 7.
+
+```{r}
+prune.boston =prune.tree(tree.boston,best =5)
+plot(prune.boston)
+text(prune.boston, pretty=0)
+```
+11. We arbitrarily set the ndoes to equal 5 and then fit a model and then tried to minimize the the error within the groups by shaving off a proportion of the data.
+
+```{r}
+yhat=predict(tree.boston, newdate=Boston[-train,])
+boston.test=Boston[-train, "medv"]
+mean((yhat-boston.test)^2)
+```
+12. The test set has a mean squared error of 155.1263, which translates to a standard error of about 12. With an average value of about 22, the tree regression model isn't very relaible, but since we did not comapre it to other mdoels we cannot say if it is the best possible model. 
+
+Bonus questions:
+1. The nature of median house values make it ideal for tree regression. Hosuing values tend to cluster geographically, with little similarity between different clusters. So while the data is technically continuous it behaves more like a discrete variable which makes it better suited for tree regression than something like libear regression.

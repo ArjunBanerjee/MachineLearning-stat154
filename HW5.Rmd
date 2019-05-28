@@ -1,0 +1,120 @@
+---
+title: "Hw5"
+author: "Arjun"
+date: "November 14, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+3. The first term measures how close the model is to the actual data throguh a classic mean squared error. The second term measures how smooth the data. lambda determines what the model uses as a tradeoff between the two metrics.
+
+4. The degree of freedom in a spline is the order number plus the number of knots minus any additional constraints for example linearity at the boundaries which reduces it by 4. 
+```{r}
+library(ISLR)
+library(splines)
+library(tree)
+```
+5.
+A data frame with 392 observations on the following 9 variables.
+mpg: miles per gallon
+cylinders: Number of cylinders between 4 and 8
+displacement: Engine displacement (cu. inches)
+horsepower: Engine horsepower
+weight: Vehicle weight (lbs.)
+acceleration: Time to accelerate from 0 to 60 mph (sec.)
+year: Model year (modulo 100)
+origin: Origin of car (1. American, 2. European, 3. Japanese)
+name: Vehicle name
+```{r}
+summary(Auto)
+```
+
+6.
+```{r}
+h.grid = range(Auto$horsepower)
+h.grid = seq(from = h.grid[1], to = h.grid[2]+1, by = .5)
+model = lm(mpg ~ ns(horsepower, df = 5), data = Auto)
+pred = predict(model, newdata = list(horsepower = h.grid), se = TRUE)
+plot(Auto$horsepower, Auto$mpg)
+lines(h.grid, pred$fit, lwd=2)
+lines(h.grid, pred$fit+2*pred$se, lty="dashed")
+lines(h.grid, pred$fit-2*pred$se, lty="dashed")
+```
+
+There appears to be a general downward trend, but from 150 to 200 you can increase the horsepower without hurting your miles per gallon too much. The main detrimental effect seems to be from 50 to 100, and then things start to smooth out. The confidence interval is relatively small, so you can say with reasonable certainty that your predicted value is near the real value.
+
+7.
+```{r}
+attr(terms(model), "predvars")
+```
+
+A 5 degree of freedom with linear boundaries will have interior 4 knots. Since there are 4 knots they are evenly spaced out in the quantiles, which is why its at 20%, 40%, 60%, and 80%.
+
+8.
+```{r}
+h.grid = range(Auto$horsepower)
+h.grid = seq(from = h.grid[1], to = h.grid[2]+1, by = .5)
+model = lm(mpg ~ ns(horsepower, df = 8), data = Auto)
+pred = predict(model, newdata = list(horsepower = h.grid), se = TRUE)
+plot(Auto$horsepower, Auto$mpg)
+lines(h.grid, pred$fit, lwd=2)
+lines(h.grid, pred$fit+2*pred$se, lty="dashed")
+lines(h.grid, pred$fit-2*pred$se, lty="dashed")
+```
+
+```{r}
+attr(terms(model), "predvars")
+```
+
+Since the degree of freedom is higher the number of knots are higher. This time its 7 interior knots, which isbbecause the degree of freedom is 3 higher than in question 7. In terms of actual output, the general reuslts are very similar, with there being a downward trend from 50 to 150 and then a general levelling out from then on. However there is more curvature in the place with the smallest largest negative effect from 50 to 100, with a slight upward slope just at 50. 
+
+9.
+```{r}
+n = length(Auto$mpg)
+train = sample(n, n/2)
+trainset = Auto[train,]
+testset = Auto[-train,]
+```
+
+```{r}
+tmodel = tree(mpg~. - weight - name - acceleration, data = trainset)
+```
+
+```{r}
+plot(tmodel)
+text(tmodel, pretty = 0)
+```
+
+11. We assume the data can be divided into distinct groups. In this case, the data can be divided into 7 distinct groups. First by displacement. Then those groups can be divided by horspower, then the low horsepower group can be divided by year, and finally one group can be divided by displacement again. Since the griuos all have fairly different mpg averages, a tree model seems appropriate. 
+
+12. 
+```{r}
+cv.tmodel = cv.tree(tmodel)
+plot(cv.tmodel$size, cv.tmodel$dev, type = "b")
+```
+
+A tree with 6 nodes is the best model.
+```{r}
+best = prune.tree(tmodel, best = 6)
+plot(best)
+text(best, pretty = 0)
+```
+13. 
+
+```{r}
+four = prune.tree(tmodel, best = 4)
+plot(four)
+text(four, pretty = 0)
+```
+
+```{r}
+yhat1 = predict(tmodel, newdata = testset)
+yhat2 = predict(four, newdata = testset)
+MSE1 = mean((Auto$mpg - yhat1)^2)
+MSE2 = mean((Auto$mpg - yhat2)^2)
+MSE1
+MSE2
+```
+
+The model with 4 nodes has a slightly larger test MSE than the model with 7 nodes. This is to be expected as our cross validation showed that the deviance of 4 node models is slightly higher than 7 node models. However, the 4 node model only has a 5% increase in test MSE than the 7 node model. SO the differences are slight, and if there is a computational benefit to going with a 4 node model, it would be practical. 

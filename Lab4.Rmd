@@ -1,0 +1,56 @@
+---
+title: "Lab4"
+author: "Arjun"
+date: "September 24, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ x =read.table("prostate-cancer-data.txt", header=T) # import data
+glm.fits=glm(nodes~Xray+grade+stage+age+acid,data=x, family=binomial)
+summary(glm.fits)
+```
+1. The median residuals are pretty small so that heavily implies that a logisticc regression is a good model. Only Xray and stage have significance with sufficiently low p-values so they would be good variables to use in our regression
+
+```{r}
+backwards=step(glm.fits)
+```
+
+2. Since AIC is a goodness of fit metric, backwards selection drops the variable with lowest AIC, and then refits the model to the remaining variables until all variables are statistically significant
+
+```{r}
+nothing=glm(nodes~1, data=x, family=binomial)
+summary(nothing)
+forwards = step(nothing,
+scope=list(lower=formula(nothing),upper=formula(glm.fits)), direction="forward")
+```
+
+3. AIC provides a very similar function in forwards selection, by avcting as the primary metric we use to determine which variables are relatively siginifcant and which variables should not be used.
+
+```{r}
+glm.selected=glm(nodes~Xray+stage+acid, data=x, family=binomial)
+summary(glm.selected)
+```
+
+4. Someone with none of the variables present has an e^-3.57 odds of having nodal involvement, the presence of Xray multiples the probability by e^2.06,the presence of stage multiples the probability by e^1.75 and acid has a low effect of only multiplying it by e^.02
+
+```{r}
+glm.probs=predict(glm.selected, type="response")
+glm.probs[1:10]
+```
+5. Patients 5, 7,8,9 and 10 almost certainly don't have any nodal involvement. Patients 3 and 6 might have nodal involvement, while patients 1 and 4 probably don't but you can't rule it out.
+
+```{r}
+glm.pred=rep("0", 53)
+glm.pred[glm.probs>0.5]="1"
+```
+
+```{r}
+table(glm.pred, x$nodes)
+mean(glm.pred==x$nodes)
+```
+

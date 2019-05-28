@@ -1,0 +1,66 @@
+---
+title: "Hw3"
+author: "Arjun"
+date: "October 4, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+set.seed(12)
+cancer = read.table("prostate-cancer-data.txt", header = TRUE)
+sampler = sample(1:54, 40, replace = FALSE)
+checker = function(i, vec){
+  for(j in vec){
+    if(j == i){
+      return(FALSE)
+    }
+  }
+  return(TRUE)
+}
+test.vec = c()
+for(i in 1:54){
+  test.vec = c(test.vec, checker(i, sampler))
+}
+test.step = 1:54
+test.step2 = test.step[test.vec]
+library(dplyr)
+test = slice(cancer, test.step2)
+training = slice(cancer, sampler)
+```
+
+```{r}
+model = glm(nodes~Xray+grade+stage+age+acid,data=training, family=binomial)
+model
+```
+8. 
+The intercept shows that without the prescence of any of the indicators and an age and acid of 0 the proabaility of having nodal involvement is 0. The grade has relatively little effect while stage and Xray have big effects. Because age and acid are not dichotomous their coefficients are small, and as you age your probability of having nodal involvement decreases  
+```{r}
+nothing=glm(nodes~1, data=training, family=binomial)
+summary(nothing) 
+forwards = step(nothing, scope=list(lower=formula(nothing),upper=formula(model)), direction="forward")
+```
+
+```{r}
+model2 = glm(nodes~Xray+stage+age,data=training, family=binomial)
+model2
+```
+
+10. Since only Xray, stage and age are present the significance of the coefficients increases. Age still has a low coefficient because of it is a continuous variable. If neither indicators are present and the age is zero, the chance of having nodal involvement is 23%  
+
+```{r}
+test.prob = predict(model2, test, type="response")
+test.prob
+```
+
+11. All data points other than 1,11, and 12, have relatively low probabilities of having nodal involvement with many having a less than 15% chance of havinf nodal involvement.
+
+12.
+
+```{r}
+test.pred = rep(0, 14)
+test.pred[test.prob > .5] = 1
+1- mean(test.pred == test$nodes)
+```
+With a test error rate of 35.7% the model we are using isn't great, but it is better than guessing, making it a valuable model.

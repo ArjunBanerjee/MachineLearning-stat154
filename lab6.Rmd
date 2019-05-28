@@ -1,0 +1,88 @@
+---
+title: "Lab 6"
+author: "Arjun"
+date: "October 8, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+```{r}
+library(e1071)
+library(ISLR)
+```
+
+```{r}
+attach(Smarket) 
+train=(Year<2005)
+Smarket.2005=Smarket[!train,]
+dim(Smarket.2005)
+Direction.2005=Direction[!train]
+train.X=cbind(Lag1, Lag2)[train,]
+test.X=cbind(Lag1, Lag2)[!train,]
+train.Direction=Direction[train]
+set.seed(12)
+library(class)
+knn.pred=knn(train.X, test.X, train.Direction, k=1)
+table(knn.pred, Direction.2005)
+mean(knn.pred==Direction.2005)
+```
+1. For k-nearest neighbor with a k of one, every data point in the test set is classified as the same group as the nearest point to it in the training set. With a test error of .5, the model has the same success rate as guessing and is therefore useless.
+
+```{r}
+set.seed(12)
+library(class)
+knn.pred=knn(train.X, test.X, train.Direction, k=3)
+table(knn.pred, Direction.2005)
+mean(knn.pred==Direction.2005)
+```
+
+```{r}
+set.seed(12)
+library(class)
+knn.pred=knn(train.X, test.X, train.Direction, k=10)
+table(knn.pred, Direction.2005)
+mean(knn.pred==Direction.2005)
+```
+
+2. For k=3, the test error rate is slightly worse, and for k =10 the test error rate is slightly better, which implies that k nearest neighbor isn't a very good model for the behavior of the stock market.
+
+
+```{r}
+set.seed(9)
+x=matrix(rnorm(200*2), ncol=2)
+x[1:100,]=x[1:100,]+2
+x[101:150,]=x[101:150,]-2
+y=c(rep(1, 150), rep(2, 50)) 
+```
+
+```{r}
+dat=data.frame(x=x, y=as.factor(y))
+plot(x, col=y)
+```
+
+4. The data is clearly grouped into two different groups with one cluster in the middle, surrounded on all sides by another group. There are also some data points from the outside group within the center cluster.
+
+```{r}
+ train=sample(200, 100)
+svmfit=svm(y~., data=dat[train,], kernel="radial", gamma=1, cost=1)
+plot(svmfit, dat[train,])
+table(true=dat[-train, "y"], pred=predict(svmfit, newdata=dat[-train,]))
+```
+6. With a test error rate of 9%, the raidal kernel model appears to be a good model even with a cost of 1.
+
+```{r}
+train=sample(200, 100)
+svmfit=svm(y~., data=dat[train,], kernel="radial", gamma=1, cost=10)
+plot(svmfit, dat[train,])
+table(true=dat[-train, "y"], pred=predict(svmfit, newdata=dat[-train,]))
+```
+7. The test error rate actually increases to 13%, meaning that increasing the cost led to overfitting. This is because as we increased the cost, our model was better fit to our training data, but the led to us having more errors classifying the test data.
+
+```{r}
+set.seed(1)
+tune.out=tune(svm, y~., data=dat[train,], kernel="radial", ranges=list(cost=c(0.1, 1, 10, 100, 1000), gamma=c(0.5, 1, 2, 3, 4)))
+summary(tune.out)
+```
+8. The best paramters are a gamma of 1, and a cost of 10.
+
+9. The data is randomly divided in 10 equally sized sets. The first set is treated as the validation set. Then the radial kernel method is applied to each of the other 9 sets.  Then the Mean squared error is calculated for each of the set using the validation set as a basis. This repeated 10 times for each parameter combination. 

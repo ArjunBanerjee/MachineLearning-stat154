@@ -1,0 +1,67 @@
+---
+title: "Lab 5"
+author: "Arjun"
+date: "October 1, 2018"
+output: html_document
+---
+
+```{r}
+library(MASS)
+library(ISLR)
+fix(Smarket)
+names(Smarket)
+```
+
+```{r}
+set.seed(1) 
+train=sample(1250, 998)
+trainset=Smarket[train,]
+testset=Smarket[-train,]
+dim(trainset) 
+dim(testset)
+```
+
+```{r}
+lda.fit=lda(Direction~Lag1+Lag2, data=trainset) 
+lda.fit
+```
+
+3. The priors show that about 48% of the data had direction down and the other 52% had direction Up. The Coefficients show that as Lag1 and Lag2 decrease their LDA score increases which corresponds to an increased probability that they are classified as direction Up.
+
+```{r}
+par(mar=rep(2, 4)) 
+plot(lda.fit)
+```
+
+4. Based on these two plots the assumptions of normality and consistent variancce seems plausible. They both look nomral and have similar ranges which would imply consistent variance
+
+```{r}
+lda.pred=predict(lda.fit, testset) 
+names(lda.pred)     
+lda.class=lda.pred$class 
+table(lda.class, testset$Direction)
+1-mean(lda.class==testset$Direction)
+```
+5. It's wrong almost 50% of the time which makes it slightly better than guessing making the model pretty much useless
+```{r}
+qda.fit=qda(Direction~Lag1+Lag2, data=trainset) 
+qda.fit
+```
+
+```{r}
+qda.class=predict(qda.fit, testset)$class 
+table(qda.class, testset$Direction) 
+1-mean(qda.class==testset$Direction)
+```
+
+7. The test error rate is very close to 50% which makes it marginally better than guessing which also makes the QDA a poor model for predicting. Also as a side note the stock market is very unpredicatble so it could be that there is no way to interpret the previous days return as an indication for the actual direction of the market as a whole, which would explain why both analyses were ineffective
+
+```{r}
+set.seed(1) 
+x=matrix(rnorm(20*2), ncol=2) 
+y=c(rep(-1, 10), rep(1, 10))
+x[y==1,]=x[y==1,]+1 
+plot(x, col=(3-y))
+```
+
+With the exception of the one outlier at -1,1 for red, the red and the blue dots appear to be linear separable.

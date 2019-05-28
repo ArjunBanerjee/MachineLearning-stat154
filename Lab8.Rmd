@@ -1,0 +1,89 @@
+---
+title: "LAb 8"
+author: "Arjun"
+date: "October 22, 2018"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r}
+alpha.fn=function(data, index){
+  X=data$X[index]
+  Y=data$Y[index]
+  return((var(Y)-cov(X, Y))/(var(X)+var(Y)-2*cov(X, Y)))
+  }
+```
+
+```{r}
+library(ISLR)
+library(boot)
+```
+
+```{r}
+alpha.fn(Portfolio, 1:100)
+alpha.fn(Portfolio, 1:50)
+```
+2.The function that samples a bigger proportion of the values returns an alpha close to 50%. Because, the two values are random a bigger sample will decrease the variation of both x and y which will lead to var(y)/var(x) + var(y) approach 50%. 
+
+```{r}
+alpha.fn(Portfolio, sample(100, 100, replace=T))
+```
+
+```{r}
+boot(Portfolio, alpha.fn, R=1000)
+```
+
+4. The bootstrap function returned a value of .58 which means that you should invest 58% of your money in X and and 42% of your money in Y to minimize risk. The bias is very low only -.002, but the standard error is very high. SO the specfic values we used are not going to effect the value of alpha too much compared to other values, but there is low certainty that an alpha of 58% is the best value. 
+
+```{r}
+boot.fn=function(data, index){
+  return(coef(lm(mpg~horsepower, data=data, subset=index)))
+}
+```
+
+```{r}
+boot.fn(Auto, 1:392)
+```
+
+```{r}
+boot.fn(Auto, sample(392, 392, replace=T))
+```
+
+```{r}
+boot(Auto, boot.fn, 1000)
+```
+
+6. All the values are pretty similar to each other, and the bootstrap function has the exact same sample that samples all the Auto data once. This is because when you sample 1000 times with replacement, the sample will likely have all 392 data points in them at least once, which will make the linear models coefficients equivalent to the one with all the data points only once. The one with replacement but only 392 data points will have a slightly different training set so it will have slightly different coefficients.
+
+7. We developed a function that could give us an explanatory statistic on the data set we were looking at. Then we sampled the data in various ways and got the average of the statistic through that method. The bootsrap is using a set of data and then resampling from that data with replacement in order to decrease the variance of the data in exchange for a higher bias.
+
+```{r}
+x= matrix(data=c(20, 12, 23, 14, 41, 17, 61, 21, 31, 12, 26, 15, 52, 14, 15, 22, 33, 43, 11, 62, 13, 14, 33, 42, 23, 13, 19, 20, 31, 81), nrow=15, ncol=2)
+y=c(43, 34, 21, 42, 23, 74, 13, 22, 31, 17, 31, 51, 16, 25, 54)
+```
+
+```{r}
+train=sample(1:nrow(x), nrow(x)/2) 
+test=(-train) 
+y.test=y[test]  
+library(glmnet)
+train=sample(1:nrow(x), nrow(x)/2)  
+grid=seq(10, 1, length=100) 
+usual.model=glmnet(x[train,], y[train], alpha=0, lambda=0) 
+usual.pred=predict(usual.model, s=4, newx=x[test,]) 
+mean((usual.pred-y.test)^2)
+```
+```{r}
+ridge.mod1=glmnet(x[train,], y[train], alpha=0, lambda=grid)
+ridge.pred=predict(ridge.mod1, s=4, newx=x[test,]) 
+mean((ridge.pred-y.test)^2) 
+```
+
+```{r}
+lasso.mod2=glmnet(x[train,], y[train], alpha=1, lambda=grid) 
+lasso.pred=predict(lasso.mod2, s=4, newx=x[test,]) 
+mean((lasso.pred-y.test)^2) 
+```
+
+12. The LSR had the highest MSE, with the ridge regression having a lower MSE, and LASSO having the smallest. The least squares regression just assumes linearity and there for will have the lowest bias but the highest variance. The ridge regression assumes something looking like variance but it also has a lambda*Beta value in it, which makes the data look less linear and more curved. What this does is increases Bias and decreases the variance. 
